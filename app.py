@@ -16,6 +16,7 @@ from pydantic import BaseModel, Field
 from plaid.api import plaid_api
 from plaid.exceptions import ApiException
 from plaid.model.country_code import CountryCode
+from plaid.model.accounts_get_request import AccountsGetRequest
 from plaid.model.item_public_token_exchange_request import (
     ItemPublicTokenExchangeRequest,
 )
@@ -60,6 +61,20 @@ class PlaidItem(Base):
     cursor: Mapped[str | None] = mapped_column(String, nullable=True)
 
 
+class BankAccount(Base):
+    __tablename__ = "bank_accounts"
+
+    account_id: Mapped[str] = mapped_column(String, primary_key=True)
+    name: Mapped[str] = mapped_column(String)
+    official_name: Mapped[str | None] = mapped_column(String, nullable=True)
+    mask: Mapped[str | None] = mapped_column(String, nullable=True)
+    account_type: Mapped[str] = mapped_column(String)
+    subtype: Mapped[str | None] = mapped_column(String, nullable=True)
+    current_balance_cents: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    available_balance_cents: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    currency: Mapped[str | None] = mapped_column(String(3), nullable=True)
+
+
 class Bucket(Base):
     __tablename__ = "buckets"
 
@@ -99,6 +114,17 @@ class Allocation(Base):
     bucket: Mapped[Bucket] = relationship(back_populates="allocations")
 
 
+class BucketTransfer(Base):
+    __tablename__ = "bucket_transfers"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    source_bucket_id: Mapped[int] = mapped_column(ForeignKey("buckets.id"), index=True)
+    destination_bucket_id: Mapped[int] = mapped_column(ForeignKey("buckets.id"), index=True)
+    date: Mapped[DateType] = mapped_column(Date, index=True)
+    amount_cents: Mapped[int] = mapped_column(Integer)
+    note: Mapped[str] = mapped_column(String(120), default="")
+
+
 class BucketCreate(BaseModel):
     name: str = Field(min_length=1, max_length=60)
 
@@ -110,6 +136,14 @@ class AllocationInput(BaseModel):
 
 class AllocationUpdate(BaseModel):
     allocations: list[AllocationInput]
+
+
+class BucketTransferCreate(BaseModel):
+    source_bucket_id: int
+    destination_bucket_id: int
+    amount_cents: int = Field(gt=0)
+    date: DateType = Field(default_factory=DateType.today)
+    note: str = Field(default="", max_length=120)
 
 
 Base.metadata.create_all(engine)
@@ -206,6 +240,25 @@ def transaction_json(transaction: Transaction) -> dict[str, Any]:
     }
 
 
+def get_bucket_balances(db: Session) -> dict[int, int]:
+    balances = dict(
+        db.execute(
+            select(Allocation.bucket_id, func.sum(Allocation.amount_cents)).group_by(
+                Allocation.bucket_id
+            )
+        ).all()
+    )
+    transfers = db.scalars(select(BucketTransfer)).all()
+    for transfer in transfers:
+        balances[transfer.source_bucket_id] = (
+            balances.get(transfer.source_bucket_id, 0) or 0
+        ) - transfer.amount_cents
+        balances[transfer.destination_bucket_id] = (
+            balances.get(transfer.destination_bucket_id, 0) or 0
+        ) + transfer.amount_cents
+    return balances
+
+
 @app.get("/", include_in_schema=False)
 def index() -> FileResponse:
     return FileResponse(BASE_DIR / "static" / "index.html")
@@ -291,11 +344,36 @@ def sync_transactions(db: Session = Depends(get_db)) -> dict[str, int]:
                 counts["removed"] += 1
             cursor = response.next_cursor
             has_more = response.has_more
+        accounts_response = get_plaid_client().accounts_get(
+            AccountsGetRequest(access_token=item.access_token)
+        )
     except ApiException as error:
         db.rollback()
         logger.exception("Plaid transaction sync failed")
         raise HTTPException(status_code=502, detail="Plaid could not sync transactions.") from error
 
+    synced_account_ids: set[str] = set()
+    for account in accounts_response.accounts:
+        balances = account.balances
+        account_id = account.account_id
+        synced_account_ids.add(account_id)
+        db.merge(
+            BankAccount(
+                account_id=account_id,
+                name=account.name,
+                official_name=account.official_name,
+                mask=account.mask,
+                account_type=account.type.value if hasattr(account.type, "value") else str(account.type),
+                subtype=account.subtype.value if account.subtype and hasattr(account.subtype, "value") else account.subtype,
+                current_balance_cents=dollars_to_cents(balances.current) if balances and balances.current is not None else None,
+                available_balance_cents=dollars_to_cents(balances.available) if balances and balances.available is not None else None,
+                currency=balances.iso_currency_code if balances else None,
+            )
+        )
+    if synced_account_ids:
+        db.query(BankAccount).filter(~BankAccount.account_id.in_(synced_account_ids)).delete(
+            synchronize_session=False
+        )
     item.cursor = cursor
     db.commit()
     return counts
@@ -309,20 +387,94 @@ def list_transactions(db: Session = Depends(get_db)) -> list[dict[str, Any]]:
     return [transaction_json(transaction) for transaction in transactions]
 
 
+@app.get("/api/accounts")
+def list_accounts(db: Session = Depends(get_db)) -> list[dict[str, Any]]:
+    accounts = db.scalars(select(BankAccount).order_by(BankAccount.name)).all()
+    return [
+        {
+            "account_id": account.account_id,
+            "name": account.name,
+            "official_name": account.official_name,
+            "mask": account.mask,
+            "type": account.account_type,
+            "subtype": account.subtype,
+            "current_balance_cents": account.current_balance_cents,
+            "available_balance_cents": account.available_balance_cents,
+            "currency": account.currency,
+        }
+        for account in accounts
+    ]
+
+
 @app.get("/api/buckets")
 def list_buckets(db: Session = Depends(get_db)) -> list[dict[str, Any]]:
     buckets = db.scalars(select(Bucket).order_by(Bucket.name)).all()
-    balances = dict(
-        db.execute(
-            select(Allocation.bucket_id, func.sum(Allocation.amount_cents)).group_by(
-                Allocation.bucket_id
-            )
-        ).all()
-    )
+    balances = get_bucket_balances(db)
     return [
         {"id": bucket.id, "name": bucket.name, "balance_cents": balances.get(bucket.id, 0) or 0}
         for bucket in buckets
     ]
+
+
+@app.get("/api/transfers")
+def list_transfers(db: Session = Depends(get_db)) -> list[dict[str, Any]]:
+    transfers = db.scalars(
+        select(BucketTransfer).order_by(BucketTransfer.date.desc(), BucketTransfer.id.desc())
+    ).all()
+    return [
+        {
+            "id": transfer.id,
+            "date": transfer.date.isoformat(),
+            "source_bucket_id": transfer.source_bucket_id,
+            "source_bucket": db.get(Bucket, transfer.source_bucket_id).name,
+            "destination_bucket_id": transfer.destination_bucket_id,
+            "destination_bucket": db.get(Bucket, transfer.destination_bucket_id).name,
+            "amount_cents": transfer.amount_cents,
+            "note": transfer.note,
+        }
+        for transfer in transfers
+    ]
+
+
+@app.post("/api/transfers", status_code=201)
+def create_transfer(
+    payload: BucketTransferCreate, db: Session = Depends(get_db)
+) -> dict[str, Any]:
+    if payload.source_bucket_id == payload.destination_bucket_id:
+        raise HTTPException(status_code=422, detail="Choose two different buckets.")
+
+    source = db.get(Bucket, payload.source_bucket_id)
+    destination = db.get(Bucket, payload.destination_bucket_id)
+    if source is None or destination is None:
+        raise HTTPException(status_code=404, detail="Source or destination bucket not found.")
+
+    available_cents = get_bucket_balances(db).get(source.id, 0) or 0
+    if payload.amount_cents > available_cents:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Transfer exceeds {source.name}'s available balance of ${available_cents / 100:.2f}.",
+        )
+
+    transfer = BucketTransfer(
+        source_bucket_id=source.id,
+        destination_bucket_id=destination.id,
+        date=payload.date,
+        amount_cents=payload.amount_cents,
+        note=payload.note.strip(),
+    )
+    db.add(transfer)
+    db.commit()
+    db.refresh(transfer)
+    return {
+        "id": transfer.id,
+        "date": transfer.date.isoformat(),
+        "source_bucket_id": source.id,
+        "source_bucket": source.name,
+        "destination_bucket_id": destination.id,
+        "destination_bucket": destination.name,
+        "amount_cents": transfer.amount_cents,
+        "note": transfer.note,
+    }
 
 
 @app.post("/api/buckets", status_code=201)
@@ -375,7 +527,7 @@ def export_csv(db: Session = Depends(get_db)) -> StreamingResponse:
     output = io.StringIO(newline="")
     writer = csv.writer(output)
     writer.writerow(
-        ["date", "merchant", "description", "amount", "currency", "pending", "allocations", "unassigned_amount"]
+        ["date", "merchant", "description", "amount", "currency", "pending", "allocations", "unassigned_amount", "record_type", "from_bucket", "to_bucket", "transfer_amount"]
     )
     transactions = db.scalars(select(Transaction).order_by(Transaction.date.desc())).all()
     for transaction in transactions:
@@ -395,6 +547,32 @@ def export_csv(db: Session = Depends(get_db)) -> StreamingResponse:
                 transaction.pending,
                 allocation_text,
                 f"{unassigned / 100:.2f}" if unassigned else "0.00",
+                "bank_transaction",
+                "",
+                "",
+                "",
+            ]
+        )
+    transfers = db.scalars(
+        select(BucketTransfer).order_by(BucketTransfer.date.desc(), BucketTransfer.id.desc())
+    ).all()
+    for transfer in transfers:
+        source = db.get(Bucket, transfer.source_bucket_id)
+        destination = db.get(Bucket, transfer.destination_bucket_id)
+        writer.writerow(
+            [
+                transfer.date.isoformat(),
+                "Internal bucket transfer",
+                transfer.note or f"{source.name} to {destination.name}",
+                "0.00",
+                "USD",
+                "false",
+                "Does not change account income or spending",
+                "0.00",
+                "bucket_transfer",
+                source.name,
+                destination.name,
+                f"{transfer.amount_cents / 100:.2f}",
             ]
         )
     output.seek(0)

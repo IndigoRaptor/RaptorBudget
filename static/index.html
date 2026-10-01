@@ -3,94 +3,120 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#f4f7f5">
+    <meta name="theme-color" content="#070b08">
     <title>RaptorBudget | Transactions</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
     <style>
       :root {
-        color-scheme: light;
-        font-family: "DM Sans", sans-serif;
-        color: #182823;
-        background: #f4f7f5;
+        color-scheme: dark;
+        font-family: "IBM Plex Mono", "Courier New", monospace;
+        color: #d4ecd9;
+        background: #070b08;
         font-synthesis: none;
-        --ink: #182823;
-        --muted: #687771;
-        --line: #dce5df;
-        --paper: #fff;
-        --green: #176b53;
-        --green-dark: #10513f;
-        --green-pale: #e5f2eb;
-        --orange: #bd552f;
-        --orange-pale: #fff0e8;
+        --ink: #d4ecd9;
+        --muted: #829887;
+        --line: #263c2d;
+        --paper: #0b120d;
+        --panel: #0e1911;
+        --green: #69bfa8;
+        --green-dark: #52a98f;
+        --green-pale: #14261f;
+        --orange: #d9935e;
+        --orange-pale: #2b1b0e;
+        --cyan: #73bed0;
       }
       * { box-sizing: border-box; }
-      body { margin: 0; min-width: 320px; }
+      body { margin: 0; min-width: 320px; background-color: #070b08; background-image: repeating-linear-gradient(0deg, transparent 0, transparent 3px, rgba(89, 180, 105, .025) 4px); }
       button, input, select { font: inherit; }
+      :focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
       button { cursor: pointer; }
       button:disabled { cursor: wait; opacity: .6; }
       .topbar { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 15px max(24px, calc((100vw - 1400px) / 2)); background: var(--paper); border-bottom: 1px solid var(--line); }
       .brand { display: flex; align-items: center; gap: 11px; font-weight: 700; }
-      .brand-mark { display: grid; width: 34px; aspect-ratio: 1; place-items: center; color: #fff; background: var(--green); font-size: 13px; }
+      .brand-mark { display: grid; width: 34px; aspect-ratio: 1; place-items: center; color: #071006; background: var(--green); font-size: 13px; }
       .top-actions, .toolbar, .filters, .row-actions { display: flex; align-items: center; gap: 9px; }
       .shell { max-width: 1400px; margin: 0 auto; padding: 38px 28px 64px; }
       .page-heading { display: flex; justify-content: space-between; align-items: end; gap: 24px; margin-bottom: 28px; }
-      .eyebrow { margin: 0 0 7px; color: var(--green); font-size: 11px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase; }
+      .eyebrow { margin: 0 0 7px; color: var(--green); font-size: 10px; font-weight: 700; text-transform: uppercase; }
       h1, h2, p { margin-top: 0; }
-      h1 { margin-bottom: 0; font: 600 38px/1.05 "Newsreader", Georgia, serif; }
+      h1 { margin-bottom: 0; font: 600 30px/1.15 "IBM Plex Mono", monospace; }
       .as-of { margin: 0 0 4px; color: var(--muted); font-size: 13px; }
-      .button { display: inline-flex; align-items: center; justify-content: center; min-height: 39px; padding: 0 14px; border: 1px solid var(--line); border-radius: 4px; background: var(--paper); color: var(--ink); font-size: 13px; font-weight: 600; text-decoration: none; white-space: nowrap; }
-      .button:hover { border-color: #a9bdb2; }
-      .button.primary { border-color: var(--green); background: var(--green); color: white; }
+      .button { display: inline-flex; align-items: center; justify-content: center; min-height: 39px; padding: 0 14px; border: 1px solid var(--line); border-radius: 3px; background: #101a13; color: var(--ink); font-size: 12px; font-weight: 600; text-decoration: none; white-space: nowrap; }
+      .button:hover { border-color: #64804f; background: #142018; }
+      .button.primary { border-color: var(--green); background: var(--green); color: #0a1208; }
       .button.primary:hover { background: var(--green-dark); }
       .button.quiet { min-height: 32px; padding: 0 10px; }
-      .summary { display: grid; grid-template-columns: repeat(3, 1fr); margin-bottom: 30px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); background: rgba(255,255,255,.55); }
-      .metric { padding: 16px 21px 17px; border-right: 1px solid var(--line); }
-      .metric:last-child { border-right: 0; }
-      .metric-label { display: block; margin-bottom: 7px; color: var(--muted); font-size: 12px; }
-      .metric-value { font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; }
-      .metric-value.income { color: var(--green); }
+      .review-cta { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 12px; margin: -8px 0 24px; padding: 14px 17px; border: 1px solid var(--green); border-radius: 3px; background: var(--green); color: #0a1208; text-align: left; font-size: 13px; font-weight: 700; }
+      .review-cta:hover { background: var(--green-dark); }
+      .review-cta[hidden] { display: none; }
+      .review-cta-action { flex: none; padding: 5px 8px; border: 1px solid #263d16; font-size: 10px; text-transform: uppercase; }
+      .account-overview { margin: 0 0 28px; }
+      .overview-heading { display: flex; justify-content: space-between; align-items: end; gap: 12px; margin-bottom: 11px; }
+      .overview-heading h2 { font: 600 19px/1.2 "IBM Plex Mono", monospace; }
+      .account-count, .transaction-count { color: var(--muted); font-size: 11px; }
+      .account-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(205px, 1fr)); gap: 9px; }
+      .account-card { min-width: 0; padding: 13px 14px; border: 1px solid var(--line); border-radius: 3px; background: var(--panel); }
+      .account-card-top { display: flex; justify-content: space-between; gap: 10px; align-items: start; }
+      .account-name { display: block; overflow: hidden; font-size: 12px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+      .account-type { display: block; margin-top: 3px; color: var(--muted); font-size: 10px; text-transform: capitalize; }
+      .account-mask { color: var(--muted); font-size: 10px; white-space: nowrap; }
+      .account-balance { display: block; margin-top: 12px; font-size: 20px; font-weight: 600; font-variant-numeric: tabular-nums; }
+      .account-available { margin: 3px 0 0; color: var(--muted); font-size: 10px; }
+      .account-empty { padding: 17px; border: 1px dashed var(--line); color: var(--muted); font-size: 12px; }
       .workspace { display: grid; grid-template-columns: 245px minmax(0, 1fr); gap: 36px; align-items: start; }
       .transaction-panel, .table-wrap { min-width: 0; }
       .bucket-heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 11px; }
-      h2 { margin-bottom: 0; font-size: 14px; font-weight: 700; }
+      .bucket-actions { display: flex; gap: 5px; }
+      h2 { margin-bottom: 0; font-size: 13px; font-weight: 700; }
       .bucket-list { border-top: 1px solid var(--line); }
-      .bucket { display: flex; justify-content: space-between; gap: 10px; padding: 12px 1px; border-bottom: 1px solid var(--line); font-size: 13px; }
+      .bucket { display: grid; grid-template-columns: minmax(68px, .9fr) minmax(55px, 1fr) auto; align-items: center; gap: 9px; padding: 10px 1px; border-bottom: 1px solid var(--line); font-size: 12px; }
       .bucket-name { overflow-wrap: anywhere; }
       .bucket-balance { color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
       .bucket-balance.negative { color: var(--orange); }
+      .bucket-track { height: 6px; overflow: hidden; border-radius: 2px; background: #1b2b20; }
+      .bucket-bar { display: block; width: var(--bar-width); height: 100%; min-width: 0; border-radius: inherit; background: var(--bar-color); }
+      .bucket-bar.negative { background: var(--orange); }
+      .bucket-chart-note { margin: 9px 0 0; color: var(--muted); font-size: 10px; line-height: 1.45; }
       .bucket-note { margin: 12px 0 0; color: var(--muted); font-size: 11px; line-height: 1.5; }
+      .transfer-history { margin-top: 27px; }
+      .transfer-history h2 { margin-bottom: 10px; }
+      .transfer-entry { padding: 10px 0; border-top: 1px solid var(--line); font-size: 12px; }
+      .transfer-entry-main { display: flex; justify-content: space-between; gap: 8px; }
+      .transfer-entry-route { font-weight: 600; }
+      .transfer-entry-amount { white-space: nowrap; font-variant-numeric: tabular-nums; }
+      .transfer-entry-meta { margin: 4px 0 0; color: var(--muted); font-size: 10px; }
       .transactions-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 15px; }
-      .filters { gap: 3px; padding: 3px; background: #e8eeea; border-radius: 5px; }
-      .filter { min-height: 30px; padding: 0 11px; border: 0; border-radius: 3px; background: transparent; color: var(--muted); font-size: 12px; font-weight: 600; }
-      .filter[aria-pressed="true"] { background: var(--paper); color: var(--ink); box-shadow: 0 1px 3px #17271b14; }
-      .search { width: min(230px, 35vw); min-height: 37px; padding: 0 11px; border: 1px solid var(--line); border-radius: 4px; background: var(--paper); color: var(--ink); outline-color: var(--green); font-size: 13px; }
-      .table-wrap { overflow-x: auto; border-top: 1px solid var(--line); background: rgba(255,255,255,.62); }
+      .filters { gap: 3px; padding: 3px; background: #111b14; border: 1px solid var(--line); border-radius: 3px; }
+      .filter { min-height: 30px; padding: 0 11px; border: 0; border-radius: 2px; background: transparent; color: var(--muted); font-size: 11px; font-weight: 600; }
+      .filter[aria-pressed="true"] { background: #1a2b24; color: var(--green); }
+      .search { width: min(230px, 35vw); min-height: 37px; padding: 0 11px; border: 1px solid var(--line); border-radius: 3px; background: #0b120d; color: var(--ink); outline-color: var(--green); font-size: 11px; }
+      .table-wrap { overflow-x: auto; border-top: 1px solid var(--line); background: rgba(9, 16, 11, .82); }
       table { width: 100%; min-width: 720px; border-collapse: collapse; text-align: left; }
-      th { padding: 11px 12px; color: var(--muted); font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+      th { padding: 11px 12px; color: var(--muted); font-size: 10px; font-weight: 700; text-transform: uppercase; }
       td { padding: 13px 12px; border-top: 1px solid var(--line); vertical-align: middle; font-size: 13px; }
       .merchant { display: block; max-width: 300px; overflow: hidden; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
       .transaction-meta { display: block; margin-top: 4px; color: var(--muted); font-size: 11px; }
       .amount { font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
       .amount.income { color: var(--green); }
-      .allocation-label { display: block; margin: 2px 0; color: #42534b; font-size: 12px; }
-      .status { display: inline-flex; padding: 4px 7px; border-radius: 3px; background: var(--orange-pale); color: #9c4525; font-size: 10px; font-weight: 700; white-space: nowrap; }
-      .status.done { background: var(--green-pale); color: var(--green-dark); }
+      .allocation-label { display: block; margin: 2px 0; color: #b6cdbb; font-size: 11px; }
+      .status { display: inline-flex; padding: 4px 7px; border: 1px solid #60401e; border-radius: 2px; background: var(--orange-pale); color: var(--orange); font-size: 9px; font-weight: 700; white-space: nowrap; }
+      .status.done { border-color: #31554a; background: var(--green-pale); color: var(--green); }
       .empty { padding: 42px 16px; color: var(--muted); text-align: center; font-size: 13px; }
       .notice { min-height: 20px; margin: 11px 0 0; color: var(--muted); font-size: 12px; }
-      dialog { width: min(520px, calc(100vw - 28px)); max-height: min(90vh, 720px); padding: 0; border: 1px solid var(--line); border-radius: 6px; color: var(--ink); box-shadow: 0 18px 65px #14251d38; }
-      dialog::backdrop { background: #14251d66; }
+      dialog { width: min(520px, calc(100vw - 28px)); max-height: min(90vh, 720px); padding: 0; border: 1px solid #42634a; border-radius: 3px; background: #0a120d; color: var(--ink); box-shadow: 0 18px 65px #000c; }
+      dialog::backdrop { background: rgba(0, 5, 2, .78); }
       .dialog-inner { padding: 23px; }
       .dialog-head { display: flex; justify-content: space-between; align-items: start; gap: 14px; margin-bottom: 18px; }
-      .dialog-head h2 { margin: 3px 0 5px; font: 600 25px "Newsreader", Georgia, serif; }
+      .dialog-head h2 { margin: 3px 0 5px; font: 600 18px "IBM Plex Mono", monospace; }
       .dialog-subtitle { margin: 0; color: var(--muted); font-size: 12px; }
-      .close-button { width: 34px; height: 34px; border: 1px solid var(--line); border-radius: 4px; background: white; color: var(--ink); font-size: 18px; }
+      .close-button { width: 34px; height: 34px; border: 1px solid var(--line); border-radius: 3px; background: #101a13; color: var(--ink); font-size: 18px; }
       .split-header, .split-row { display: grid; grid-template-columns: minmax(0, 1fr) 130px 34px; gap: 8px; align-items: center; }
-      .split-header { margin: 0 0 7px; color: var(--muted); font-size: 10px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase; }
+      .split-header { margin: 0 0 7px; color: var(--muted); font-size: 10px; font-weight: 700; text-transform: uppercase; }
       .split-row { margin-bottom: 8px; }
-      .split-row select, .split-row input, .bucket-input { width: 100%; min-width: 0; height: 38px; padding: 0 9px; border: 1px solid var(--line); border-radius: 4px; background: white; color: var(--ink); }
+      .split-row select, .split-row input, .bucket-input { width: 100%; min-width: 0; height: 38px; padding: 0 9px; border: 1px solid var(--line); border-radius: 3px; background: #101a13; color: var(--ink); }
       .remove-split { width: 34px; height: 34px; border: 0; background: transparent; color: var(--orange); font-size: 20px; }
       .split-footer { display: flex; justify-content: space-between; gap: 12px; margin: 14px 0 19px; padding-top: 12px; border-top: 1px solid var(--line); font-size: 12px; }
       .remaining { color: var(--orange); font-weight: 600; }
@@ -98,32 +124,53 @@
       .dialog-actions { display: flex; justify-content: end; gap: 8px; }
       .bucket-form { display: flex; gap: 8px; margin-top: 16px; }
       .bucket-input { flex: 1; }
+      .transfer-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 13px; margin-bottom: 14px; }
+      .transfer-field { display: grid; gap: 6px; color: var(--ink); font-size: 12px; font-weight: 600; }
+      .transfer-field input, .transfer-field select { width: 100%; min-width: 0; height: 39px; padding: 0 10px; border: 1px solid var(--line); border-radius: 3px; background: #101a13; color: var(--ink); }
+      .review-dialog { width: min(560px, calc(100vw - 28px)); }
+      .review-transaction { margin: 13px 0; padding: 18px; border: 1px solid var(--line); background: #0e1911; }
+      .review-transaction-name { margin: 0 0 8px; overflow-wrap: anywhere; font-size: 16px; font-weight: 700; }
+      .review-transaction-meta { margin: 0; color: var(--muted); font-size: 11px; }
+      .review-transaction-amount { display: block; margin-top: 17px; color: var(--green); font-size: 27px; font-weight: 600; font-variant-numeric: tabular-nums; }
+      .review-category { margin-top: 9px; color: var(--cyan); font-size: 10px; }
+      .review-select-label { display: grid; gap: 7px; margin: 15px 0; font-size: 11px; font-weight: 600; }
+      .review-select-label select { height: 42px; padding: 0 10px; border: 1px solid #42634a; border-radius: 3px; background: #101a13; color: var(--ink); }
+      .review-progress { color: var(--green); font-size: 11px; white-space: nowrap; }
+      .review-actions { display: flex; justify-content: space-between; gap: 8px; margin-top: 17px; }
+      .review-actions-end { display: flex; gap: 8px; }
+      .transfer-balance { margin: 0 0 12px; color: var(--muted); font-size: 11px; }
       @media (max-width: 860px) {
         .shell { padding: 28px 20px 50px; }
-        .workspace { grid-template-columns: 1fr; gap: 28px; }
-        .bucket-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 18px; }
-        .bucket-panel { order: 2; }
+        .workspace { grid-template-columns: 1fr; gap: 22px; }
+        .bucket-panel { order: 0; }
+        .transaction-panel { order: 1; }
       }
       @media (max-width: 560px) {
-        .topbar { padding: 12px 14px; }
-        .top-actions { gap: 6px; }
-        .top-actions .button { min-height: 35px; padding: 0 9px; font-size: 11px; }
+        .topbar { flex-wrap: wrap; padding: 10px 14px; }
+        .top-actions { flex: 1 1 100%; justify-content: flex-end; gap: 5px; }
+        .top-actions .button { min-height: 33px; padding: 0 8px; font-size: 10px; }
         .brand { gap: 7px; font-size: 13px; }
         .brand-mark { width: 30px; }
-        .shell { padding: 27px 14px 40px; }
-        .page-heading { align-items: start; flex-direction: column; gap: 11px; margin-bottom: 20px; }
-        h1 { font-size: 34px; }
-        .summary { margin-bottom: 24px; }
-        .metric { padding: 12px 9px; }
-        .metric-value { font-size: 17px; }
-        .metric-label { font-size: 10px; }
+        .shell { padding: 20px 14px 40px; }
+        .page-heading { align-items: start; flex-direction: column; gap: 11px; margin-bottom: 14px; }
+        h1 { font-size: 22px; }
+        .review-cta { margin-bottom: 14px; padding: 10px 12px; }
+        .account-overview { margin-bottom: 18px; }
+        .account-list { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 5px; scroll-snap-type: x mandatory; }
+        .account-card { flex: 0 0 min(78vw, 240px); padding: 10px; scroll-snap-align: start; }
+        .account-balance { font-size: 17px; }
+        .overview-heading h2 { font-size: 16px; }
+        .bucket-list { display: block; }
         .transactions-head { align-items: stretch; flex-direction: column; }
         .toolbar { justify-content: space-between; }
         .search { width: 100%; }
         .filters { align-self: start; }
-        .bucket-list { grid-template-columns: 1fr; }
+        .bucket { grid-template-columns: minmax(64px, .9fr) minmax(45px, .8fr) auto; gap: 7px; }
         .split-header, .split-row { grid-template-columns: minmax(0, 1fr) 100px 30px; gap: 5px; }
         .dialog-inner { padding: 18px; }
+        .review-actions { align-items: stretch; flex-direction: column-reverse; }
+        .review-actions-end { width: 100%; }
+        .review-actions-end .button { flex: 1; padding: 0 7px; white-space: normal; }
       }
     </style>
   </head>
@@ -141,16 +188,21 @@
         <div><p class="eyebrow">Money review</p><h1 id="page-title">Transactions</h1></div>
         <p class="as-of" id="period-label">All synced activity</p>
       </section>
-      <section class="summary" aria-label="Transaction summary">
-        <div class="metric"><span class="metric-label">Transactions</span><span class="metric-value" id="count-total">0</span></div>
-        <div class="metric"><span class="metric-label">Money in</span><span class="metric-value income" id="total-income">$0.00</span></div>
-        <div class="metric"><span class="metric-label">Money out</span><span class="metric-value" id="total-spending">$0.00</span></div>
+      <button class="review-cta" id="review-queue-button" type="button" hidden><span id="review-queue-label"></span><span class="review-cta-action">Open queue &gt;</span></button>
+      <section class="account-overview" aria-labelledby="accounts-title">
+        <div class="overview-heading"><div><p class="eyebrow">Connected accounts</p><h2 id="accounts-title">Bank balances</h2></div><span class="account-count" id="account-count"></span></div>
+        <div class="account-list" id="account-list"></div>
       </section>
       <div class="workspace">
         <aside class="bucket-panel" aria-labelledby="bucket-title">
-          <div class="bucket-heading"><h2 id="bucket-title">Buckets</h2><button class="button quiet" id="new-bucket-button" type="button">New bucket</button></div>
+          <div class="bucket-heading"><h2 id="bucket-title">Buckets</h2><div class="bucket-actions"><button class="button quiet" id="transfer-button" type="button">Transfer</button><button class="button quiet" id="new-bucket-button" type="button">New bucket</button></div></div>
           <div class="bucket-list" id="bucket-list"></div>
+          <p class="bucket-chart-note">Bar length compares bucket balances; orange indicates a negative balance.</p>
           <p class="bucket-note">Balances reflect categorized activity. Incoming money increases a bucket; spending reduces it.</p>
+          <section class="transfer-history" aria-labelledby="transfer-history-title">
+            <h2 id="transfer-history-title">Recent transfers</h2>
+            <div id="transfer-list"></div>
+          </section>
         </aside>
         <section class="transaction-panel" aria-labelledby="activity-title">
           <div class="transactions-head">
@@ -158,7 +210,7 @@
               <button class="filter" data-filter="all" aria-pressed="true" type="button">All activity</button>
               <button class="filter" data-filter="review" aria-pressed="false" type="button">Needs review</button>
             </div>
-            <input class="search" id="search" type="search" placeholder="Search transactions" aria-label="Search transactions">
+            <div class="toolbar"><span class="transaction-count" id="count-total"></span><input class="search" id="search" type="search" placeholder="Search transactions" aria-label="Search transactions"></div>
           </div>
           <h2 id="activity-title" hidden>Transaction activity</h2>
           <div class="table-wrap">
@@ -172,6 +224,30 @@
         </section>
       </div>
     </main>
+
+    <dialog class="review-dialog" id="review-dialog" aria-labelledby="review-title">
+      <section class="dialog-inner">
+        <div class="dialog-head">
+          <div><p class="eyebrow">Uncategorized transaction</p><h2 id="review-title">Quick review</h2></div>
+          <span class="review-progress" id="review-progress"></span>
+          <button class="close-button" type="button" data-close="review-dialog" aria-label="Close review queue">×</button>
+        </div>
+        <div class="review-transaction">
+          <p class="review-transaction-name" id="review-merchant"></p>
+          <p class="review-transaction-meta" id="review-meta"></p>
+          <strong class="review-transaction-amount" id="review-amount"></strong>
+          <p class="review-category" id="review-category"></p>
+        </div>
+        <label class="review-select-label" for="review-bucket">Assign entire transaction to
+          <select id="review-bucket"></select>
+        </label>
+        <p class="notice" id="review-notice" aria-live="polite"></p>
+        <div class="review-actions">
+          <button class="button quiet" id="skip-review-button" type="button">Skip</button>
+          <div class="review-actions-end"><button class="button" id="split-review-button" type="button">Split instead</button><button class="button primary" id="save-review-button" type="button">Categorize &amp; next</button></div>
+        </div>
+      </section>
+    </dialog>
 
     <dialog id="allocation-dialog" aria-labelledby="allocation-title">
       <form class="dialog-inner" id="allocation-form">
@@ -197,11 +273,28 @@
       </form>
     </dialog>
 
+    <dialog id="transfer-dialog" aria-labelledby="transfer-dialog-title">
+      <form class="dialog-inner" id="transfer-form">
+        <div class="dialog-head"><div><p class="eyebrow">Move budget</p><h2 id="transfer-dialog-title">Transfer between buckets</h2><p class="dialog-subtitle">This is an internal move; it does not change bank transactions or income and spending totals.</p></div><button class="close-button" type="button" data-close="transfer-dialog" aria-label="Close">×</button></div>
+        <div class="transfer-grid">
+          <label class="transfer-field" for="transfer-source">From bucket<select id="transfer-source" required></select></label>
+          <label class="transfer-field" for="transfer-destination">To bucket<select id="transfer-destination" required></select></label>
+          <label class="transfer-field" for="transfer-amount">Amount<input id="transfer-amount" type="number" min="0.01" step="0.01" inputmode="decimal" required></label>
+          <label class="transfer-field" for="transfer-date">Date<input id="transfer-date" type="date" required></label>
+          <label class="transfer-field" for="transfer-note" style="grid-column: 1 / -1">Note (optional)<input id="transfer-note" type="text" maxlength="120" placeholder="For example, monthly savings"></label>
+        </div>
+        <p class="transfer-balance" id="transfer-available"></p>
+        <p class="notice" id="transfer-notice" aria-live="polite"></p>
+        <div class="dialog-actions"><button class="button" type="button" data-close="transfer-dialog">Cancel</button><button class="button primary" id="save-transfer-button" type="submit">Confirm transfer</button></div>
+      </form>
+    </dialog>
+
     <script>
-      const state = { transactions: [], buckets: [], filter: "all", query: "", connected: false, editing: null };
+      const state = { transactions: [], accounts: [], buckets: [], transfers: [], filter: "all", query: "", connected: false, editing: null, reviewQueue: [], reviewIndex: 0 };
       const rowsElement = document.querySelector("#transaction-rows");
       const notice = document.querySelector("#notice");
       const allocationDialog = document.querySelector("#allocation-dialog");
+      const reviewDialog = document.querySelector("#review-dialog");
       const splitRows = document.querySelector("#split-rows");
       const currency = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
 
@@ -226,26 +319,46 @@
       }
 
       async function loadData() {
-        const [status, transactions, buckets] = await Promise.all([
-          request("/api/status"), request("/api/transactions"), request("/api/buckets"),
+        const [status, transactions, accounts, buckets, transfers] = await Promise.all([
+          request("/api/status"), request("/api/transactions"), request("/api/accounts"), request("/api/buckets"), request("/api/transfers"),
         ]);
         state.connected = status.connected;
         state.transactions = transactions;
+        state.accounts = accounts;
         state.buckets = buckets;
+        state.transfers = transfers;
         render();
       }
 
       function render() {
         document.querySelector("#connect-button").textContent = state.connected ? "Reconnect bank" : "Connect bank";
         document.querySelector("#sync-button").disabled = !state.connected;
-        document.querySelector("#count-total").textContent = state.transactions.length;
-        const incoming = state.transactions.filter((transaction) => transaction.amount_cents < 0).reduce((sum, transaction) => sum - transaction.amount_cents, 0);
-        const outgoing = state.transactions.filter((transaction) => transaction.amount_cents > 0).reduce((sum, transaction) => sum + transaction.amount_cents, 0);
-        document.querySelector("#total-income").textContent = currency.format(incoming / 100);
-        document.querySelector("#total-spending").textContent = currency.format(outgoing / 100);
+        document.querySelector("#count-total").textContent = `${state.transactions.length} transactions`;
+        const unassignedCount = state.transactions.filter((transaction) => transaction.unassigned_cents > 0).length;
+        const reviewButton = document.querySelector("#review-queue-button");
+        reviewButton.hidden = unassignedCount === 0;
+        document.querySelector("#review-queue-label").textContent = `You have ${unassignedCount} uncategorized transaction${unassignedCount === 1 ? "" : "s"}`;
         document.querySelector("#period-label").textContent = state.transactions.length ? "All synced activity" : "Waiting for account activity";
+        renderAccounts();
         renderBuckets();
+        renderTransfers();
         renderTransactions();
+      }
+
+      function renderAccounts() {
+        const list = document.querySelector("#account-list");
+        document.querySelector("#account-count").textContent = state.accounts.length ? `${state.accounts.length} account${state.accounts.length === 1 ? "" : "s"}` : "";
+        if (!state.accounts.length) {
+          list.innerHTML = `<div class="account-empty">${state.connected ? "No account balances saved yet. Select Sync to refresh account data." : "Connect a bank account to see its balance here."}</div>`;
+          return;
+        }
+        list.innerHTML = state.accounts.map((account) => {
+          const accountCurrency = new Intl.NumberFormat("en-US", { style: "currency", currency: account.currency || "USD" });
+          const current = account.current_balance_cents === null ? "Balance unavailable" : accountCurrency.format(account.current_balance_cents / 100);
+          const available = account.available_balance_cents === null ? "" : `Available ${accountCurrency.format(account.available_balance_cents / 100)}`;
+          const description = [account.subtype, account.type].filter(Boolean).join(" · ");
+          return `<article class="account-card"><div class="account-card-top"><div><span class="account-name" title="${escapeHtml(account.official_name || account.name)}">${escapeHtml(account.name)}</span><span class="account-type">${escapeHtml(description || "Bank account")}</span></div><span class="account-mask">${account.mask ? `··${escapeHtml(account.mask)}` : ""}</span></div><strong class="account-balance">${escapeHtml(current)}</strong>${available ? `<p class="account-available">${escapeHtml(available)}</p>` : ""}</article>`;
+        }).join("");
       }
 
       function renderBuckets() {
@@ -254,7 +367,125 @@
           list.innerHTML = '<div class="empty">No buckets yet.</div>';
           return;
         }
-        list.innerHTML = state.buckets.map((bucket) => `<div class="bucket"><span class="bucket-name">${escapeHtml(bucket.name)}</span><span class="bucket-balance ${bucket.balance_cents < 0 ? "negative" : ""}">${money(bucket.balance_cents)}</span></div>`).join("");
+        const largestBalance = Math.max(...state.buckets.map((bucket) => Math.abs(bucket.balance_cents)), 1);
+        const chartColors = ["#69bfa8", "#659fbc", "#c1a66a", "#779dc7", "#c67c68", "#82aa75", "#ae819e"];
+        list.innerHTML = state.buckets.map((bucket, index) => {
+          const negative = bucket.balance_cents < 0;
+          const width = Math.abs(bucket.balance_cents) ? Math.max(3, Math.round(Math.abs(bucket.balance_cents) / largestBalance * 100)) : 0;
+          return `<div class="bucket"><span class="bucket-name">${escapeHtml(bucket.name)}</span><span class="bucket-track" aria-hidden="true"><span class="bucket-bar ${negative ? "negative" : ""}" style="--bar-width:${width}%;--bar-color:${chartColors[index % chartColors.length]}"></span></span><span class="bucket-balance ${negative ? "negative" : ""}">${money(bucket.balance_cents)}</span></div>`;
+        }).join("");
+      }
+
+      function renderTransfers() {
+        const list = document.querySelector("#transfer-list");
+        const recent = state.transfers.slice(0, 6);
+        list.innerHTML = recent.length ? recent.map((transfer) => `<div class="transfer-entry"><div class="transfer-entry-main"><span class="transfer-entry-route">${escapeHtml(transfer.source_bucket)} → ${escapeHtml(transfer.destination_bucket)}</span><span class="transfer-entry-amount">${currency.format(transfer.amount_cents / 100)}</span></div><p class="transfer-entry-meta">${escapeHtml(transfer.date)}${transfer.note ? ` · ${escapeHtml(transfer.note)}` : ""}</p></div>`).join("") : '<p class="bucket-note">No transfers yet.</p>';
+      }
+
+      function suggestedBucket(transaction) {
+        const category = (transaction.category || "").toUpperCase();
+        const preferredName = category.includes("FOOD") ? "Food"
+          : category.includes("TRANSPORT") ? "Transport"
+          : category.includes("INCOME") ? "Income"
+          : category.includes("RENT") || category.includes("UTILITIES") ? "Bills"
+          : "Other";
+        return state.buckets.find((bucket) => bucket.name.toLowerCase() === preferredName.toLowerCase()) || state.buckets[0];
+      }
+
+      function currentReviewTransaction() {
+        const transactionId = state.reviewQueue[state.reviewIndex];
+        return state.transactions.find((transaction) => transaction.transaction_id === transactionId && transaction.unassigned_cents > 0);
+      }
+
+      function renderReviewQueue() {
+        let transaction = currentReviewTransaction();
+        while (!transaction && state.reviewIndex < state.reviewQueue.length) {
+          state.reviewIndex += 1;
+          transaction = currentReviewTransaction();
+        }
+        if (!transaction) {
+          reviewDialog.close();
+          notice.textContent = "Review queue complete.";
+          return;
+        }
+
+        document.querySelector("#review-progress").textContent = `${state.reviewIndex + 1} / ${state.reviewQueue.length}`;
+        document.querySelector("#review-merchant").textContent = transaction.merchant_name || transaction.name;
+        document.querySelector("#review-meta").textContent = `${transaction.date}${transaction.pending ? " · Pending" : " · Posted"}`;
+        const incoming = transaction.amount_cents < 0;
+        document.querySelector("#review-amount").textContent = `${incoming ? "+" : "−"}${currency.format(Math.abs(transaction.amount_cents) / 100)}`;
+        document.querySelector("#review-category").textContent = transaction.category ? `PLAID CATEGORY  /  ${transaction.category}` : "PLAID CATEGORY  /  NONE";
+
+        const select = document.querySelector("#review-bucket");
+        select.innerHTML = state.buckets.map((bucket) => `<option value="${bucket.id}">${escapeHtml(bucket.name)}</option>`).join("");
+        const suggestion = suggestedBucket(transaction);
+        if (suggestion) select.value = String(suggestion.id);
+        document.querySelector("#review-notice").textContent = suggestion ? `Suggested from transaction details: ${suggestion.name}` : "Create a bucket before categorizing transactions.";
+        document.querySelector("#save-review-button").disabled = !suggestion;
+        document.querySelector("#split-review-button").disabled = !suggestion;
+      }
+
+      function openReviewQueue() {
+        state.reviewQueue = state.transactions.filter((transaction) => transaction.unassigned_cents > 0).map((transaction) => transaction.transaction_id);
+        state.reviewIndex = 0;
+        if (!state.reviewQueue.length) return;
+        renderReviewQueue();
+        reviewDialog.showModal();
+      }
+
+      function advanceReviewQueue() {
+        state.reviewIndex += 1;
+        renderReviewQueue();
+      }
+
+      async function saveReviewAndAdvance() {
+        const transaction = currentReviewTransaction();
+        if (!transaction) {
+          advanceReviewQueue();
+          return;
+        }
+        const bucketId = Number(document.querySelector("#review-bucket").value);
+        try {
+          await request(`/api/transactions/${encodeURIComponent(transaction.transaction_id)}/allocations`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ allocations: [{ bucket_id: bucketId, amount_cents: Math.abs(transaction.amount_cents) }] }),
+          });
+          await loadData();
+          advanceReviewQueue();
+        } catch (error) {
+          document.querySelector("#review-notice").textContent = error.message;
+        }
+      }
+
+      function updateTransferOptions() {
+        const sourceSelect = document.querySelector("#transfer-source");
+        const destinationSelect = document.querySelector("#transfer-destination");
+        const previousDestination = destinationSelect.value;
+        const sourceId = Number(sourceSelect.value);
+        const destinationOptions = state.buckets.filter((bucket) => bucket.id !== sourceId);
+        destinationSelect.innerHTML = destinationOptions.map((bucket) => `<option value="${bucket.id}">${escapeHtml(bucket.name)}</option>`).join("");
+        if (destinationOptions.some((bucket) => String(bucket.id) === previousDestination)) destinationSelect.value = previousDestination;
+        const source = state.buckets.find((bucket) => bucket.id === sourceId);
+        const available = source?.balance_cents || 0;
+        const amountInput = document.querySelector("#transfer-amount");
+        amountInput.max = Math.max(0, available) / 100;
+        document.querySelector("#transfer-available").textContent = source ? `Available to move from ${source.name}: ${currency.format(Math.max(0, available) / 100)}` : "Create at least two buckets to transfer funds.";
+        document.querySelector("#save-transfer-button").disabled = state.buckets.length < 2 || available <= 0;
+      }
+
+      function openTransfer() {
+        const dialog = document.querySelector("#transfer-dialog");
+        const sourceSelect = document.querySelector("#transfer-source");
+        const fundedBuckets = state.buckets.filter((bucket) => bucket.balance_cents > 0);
+        const sources = fundedBuckets.length ? fundedBuckets : state.buckets;
+        sourceSelect.innerHTML = sources.map((bucket) => `<option value="${bucket.id}">${escapeHtml(bucket.name)} · ${currency.format(bucket.balance_cents / 100)}</option>`).join("");
+        document.querySelector("#transfer-date").value = new Date().toLocaleDateString("en-CA");
+        document.querySelector("#transfer-amount").value = "";
+        document.querySelector("#transfer-note").value = "";
+        document.querySelector("#transfer-notice").textContent = "";
+        updateTransferOptions();
+        dialog.showModal();
       }
 
       function renderTransactions() {
@@ -379,6 +610,13 @@
 
       document.querySelector("#connect-button").addEventListener("click", connectBank);
       document.querySelector("#sync-button").addEventListener("click", syncTransactions);
+      document.querySelector("#review-queue-button").addEventListener("click", openReviewQueue);
+      document.querySelector("#skip-review-button").addEventListener("click", advanceReviewQueue);
+      document.querySelector("#save-review-button").addEventListener("click", saveReviewAndAdvance);
+      document.querySelector("#split-review-button").addEventListener("click", () => {
+        const transaction = currentReviewTransaction();
+        if (transaction) openAllocation(transaction);
+      });
       document.querySelector("#search").addEventListener("input", (event) => { state.query = event.target.value; renderTransactions(); });
       document.querySelectorAll(".filter").forEach((button) => button.addEventListener("click", () => {
         state.filter = button.dataset.filter;
@@ -398,9 +636,11 @@
         }));
         try {
           await request(`/api/transactions/${encodeURIComponent(state.editing.transaction_id)}/allocations`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ allocations }) });
+          const resumeReview = reviewDialog.open;
           allocationDialog.close();
           await loadData();
-          notice.textContent = "Allocation saved.";
+          if (resumeReview) advanceReviewQueue();
+          else notice.textContent = "Allocation saved.";
         } catch (error) { document.querySelector("#dialog-notice").textContent = error.message; }
       });
       document.querySelector("#new-bucket-button").addEventListener("click", () => {
@@ -417,6 +657,24 @@
           await loadData();
           notice.textContent = "Bucket added.";
         } catch (error) { document.querySelector("#bucket-notice").textContent = error.message; }
+      });
+      document.querySelector("#transfer-button").addEventListener("click", openTransfer);
+      document.querySelector("#transfer-source").addEventListener("change", updateTransferOptions);
+      document.querySelector("#transfer-form").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const payload = {
+          source_bucket_id: Number(document.querySelector("#transfer-source").value),
+          destination_bucket_id: Number(document.querySelector("#transfer-destination").value),
+          amount_cents: Math.round(Number(document.querySelector("#transfer-amount").value) * 100),
+          date: document.querySelector("#transfer-date").value,
+          note: document.querySelector("#transfer-note").value,
+        };
+        try {
+          await request("/api/transfers", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+          document.querySelector("#transfer-dialog").close();
+          await loadData();
+          notice.textContent = "Bucket transfer saved.";
+        } catch (error) { document.querySelector("#transfer-notice").textContent = error.message; }
       });
       document.querySelectorAll("[data-close]").forEach((button) => button.addEventListener("click", () => document.getElementById(button.dataset.close).close()));
 
