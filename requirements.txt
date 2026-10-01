@@ -1,0 +1,10 @@
+fastapi
+uvicorn[standard]
+sqlalchemy
+alembic
+plaid-python
+pydantic-settings
+python-dotenv
+jinja2
+pytest
+httpx

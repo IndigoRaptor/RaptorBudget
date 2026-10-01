@@ -1,0 +1,426 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f4f7f5">
+    <title>RaptorBudget | Transactions</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap" rel="stylesheet">
+    <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: "DM Sans", sans-serif;
+        color: #182823;
+        background: #f4f7f5;
+        font-synthesis: none;
+        --ink: #182823;
+        --muted: #687771;
+        --line: #dce5df;
+        --paper: #fff;
+        --green: #176b53;
+        --green-dark: #10513f;
+        --green-pale: #e5f2eb;
+        --orange: #bd552f;
+        --orange-pale: #fff0e8;
+      }
+      * { box-sizing: border-box; }
+      body { margin: 0; min-width: 320px; }
+      button, input, select { font: inherit; }
+      button { cursor: pointer; }
+      button:disabled { cursor: wait; opacity: .6; }
+      .topbar { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 15px max(24px, calc((100vw - 1400px) / 2)); background: var(--paper); border-bottom: 1px solid var(--line); }
+      .brand { display: flex; align-items: center; gap: 11px; font-weight: 700; }
+      .brand-mark { display: grid; width: 34px; aspect-ratio: 1; place-items: center; color: #fff; background: var(--green); font-size: 13px; }
+      .top-actions, .toolbar, .filters, .row-actions { display: flex; align-items: center; gap: 9px; }
+      .shell { max-width: 1400px; margin: 0 auto; padding: 38px 28px 64px; }
+      .page-heading { display: flex; justify-content: space-between; align-items: end; gap: 24px; margin-bottom: 28px; }
+      .eyebrow { margin: 0 0 7px; color: var(--green); font-size: 11px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase; }
+      h1, h2, p { margin-top: 0; }
+      h1 { margin-bottom: 0; font: 600 38px/1.05 "Newsreader", Georgia, serif; }
+      .as-of { margin: 0 0 4px; color: var(--muted); font-size: 13px; }
+      .button { display: inline-flex; align-items: center; justify-content: center; min-height: 39px; padding: 0 14px; border: 1px solid var(--line); border-radius: 4px; background: var(--paper); color: var(--ink); font-size: 13px; font-weight: 600; text-decoration: none; white-space: nowrap; }
+      .button:hover { border-color: #a9bdb2; }
+      .button.primary { border-color: var(--green); background: var(--green); color: white; }
+      .button.primary:hover { background: var(--green-dark); }
+      .button.quiet { min-height: 32px; padding: 0 10px; }
+      .summary { display: grid; grid-template-columns: repeat(3, 1fr); margin-bottom: 30px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); background: rgba(255,255,255,.55); }
+      .metric { padding: 16px 21px 17px; border-right: 1px solid var(--line); }
+      .metric:last-child { border-right: 0; }
+      .metric-label { display: block; margin-bottom: 7px; color: var(--muted); font-size: 12px; }
+      .metric-value { font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; }
+      .metric-value.income { color: var(--green); }
+      .workspace { display: grid; grid-template-columns: 245px minmax(0, 1fr); gap: 36px; align-items: start; }
+      .transaction-panel, .table-wrap { min-width: 0; }
+      .bucket-heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 11px; }
+      h2 { margin-bottom: 0; font-size: 14px; font-weight: 700; }
+      .bucket-list { border-top: 1px solid var(--line); }
+      .bucket { display: flex; justify-content: space-between; gap: 10px; padding: 12px 1px; border-bottom: 1px solid var(--line); font-size: 13px; }
+      .bucket-name { overflow-wrap: anywhere; }
+      .bucket-balance { color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+      .bucket-balance.negative { color: var(--orange); }
+      .bucket-note { margin: 12px 0 0; color: var(--muted); font-size: 11px; line-height: 1.5; }
+      .transactions-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 15px; }
+      .filters { gap: 3px; padding: 3px; background: #e8eeea; border-radius: 5px; }
+      .filter { min-height: 30px; padding: 0 11px; border: 0; border-radius: 3px; background: transparent; color: var(--muted); font-size: 12px; font-weight: 600; }
+      .filter[aria-pressed="true"] { background: var(--paper); color: var(--ink); box-shadow: 0 1px 3px #17271b14; }
+      .search { width: min(230px, 35vw); min-height: 37px; padding: 0 11px; border: 1px solid var(--line); border-radius: 4px; background: var(--paper); color: var(--ink); outline-color: var(--green); font-size: 13px; }
+      .table-wrap { overflow-x: auto; border-top: 1px solid var(--line); background: rgba(255,255,255,.62); }
+      table { width: 100%; min-width: 720px; border-collapse: collapse; text-align: left; }
+      th { padding: 11px 12px; color: var(--muted); font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+      td { padding: 13px 12px; border-top: 1px solid var(--line); vertical-align: middle; font-size: 13px; }
+      .merchant { display: block; max-width: 300px; overflow: hidden; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+      .transaction-meta { display: block; margin-top: 4px; color: var(--muted); font-size: 11px; }
+      .amount { font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+      .amount.income { color: var(--green); }
+      .allocation-label { display: block; margin: 2px 0; color: #42534b; font-size: 12px; }
+      .status { display: inline-flex; padding: 4px 7px; border-radius: 3px; background: var(--orange-pale); color: #9c4525; font-size: 10px; font-weight: 700; white-space: nowrap; }
+      .status.done { background: var(--green-pale); color: var(--green-dark); }
+      .empty { padding: 42px 16px; color: var(--muted); text-align: center; font-size: 13px; }
+      .notice { min-height: 20px; margin: 11px 0 0; color: var(--muted); font-size: 12px; }
+      dialog { width: min(520px, calc(100vw - 28px)); max-height: min(90vh, 720px); padding: 0; border: 1px solid var(--line); border-radius: 6px; color: var(--ink); box-shadow: 0 18px 65px #14251d38; }
+      dialog::backdrop { background: #14251d66; }
+      .dialog-inner { padding: 23px; }
+      .dialog-head { display: flex; justify-content: space-between; align-items: start; gap: 14px; margin-bottom: 18px; }
+      .dialog-head h2 { margin: 3px 0 5px; font: 600 25px "Newsreader", Georgia, serif; }
+      .dialog-subtitle { margin: 0; color: var(--muted); font-size: 12px; }
+      .close-button { width: 34px; height: 34px; border: 1px solid var(--line); border-radius: 4px; background: white; color: var(--ink); font-size: 18px; }
+      .split-header, .split-row { display: grid; grid-template-columns: minmax(0, 1fr) 130px 34px; gap: 8px; align-items: center; }
+      .split-header { margin: 0 0 7px; color: var(--muted); font-size: 10px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase; }
+      .split-row { margin-bottom: 8px; }
+      .split-row select, .split-row input, .bucket-input { width: 100%; min-width: 0; height: 38px; padding: 0 9px; border: 1px solid var(--line); border-radius: 4px; background: white; color: var(--ink); }
+      .remove-split { width: 34px; height: 34px; border: 0; background: transparent; color: var(--orange); font-size: 20px; }
+      .split-footer { display: flex; justify-content: space-between; gap: 12px; margin: 14px 0 19px; padding-top: 12px; border-top: 1px solid var(--line); font-size: 12px; }
+      .remaining { color: var(--orange); font-weight: 600; }
+      .remaining.complete { color: var(--green); }
+      .dialog-actions { display: flex; justify-content: end; gap: 8px; }
+      .bucket-form { display: flex; gap: 8px; margin-top: 16px; }
+      .bucket-input { flex: 1; }
+      @media (max-width: 860px) {
+        .shell { padding: 28px 20px 50px; }
+        .workspace { grid-template-columns: 1fr; gap: 28px; }
+        .bucket-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 18px; }
+        .bucket-panel { order: 2; }
+      }
+      @media (max-width: 560px) {
+        .topbar { padding: 12px 14px; }
+        .top-actions { gap: 6px; }
+        .top-actions .button { min-height: 35px; padding: 0 9px; font-size: 11px; }
+        .brand { gap: 7px; font-size: 13px; }
+        .brand-mark { width: 30px; }
+        .shell { padding: 27px 14px 40px; }
+        .page-heading { align-items: start; flex-direction: column; gap: 11px; margin-bottom: 20px; }
+        h1 { font-size: 34px; }
+        .summary { margin-bottom: 24px; }
+        .metric { padding: 12px 9px; }
+        .metric-value { font-size: 17px; }
+        .metric-label { font-size: 10px; }
+        .transactions-head { align-items: stretch; flex-direction: column; }
+        .toolbar { justify-content: space-between; }
+        .search { width: 100%; }
+        .filters { align-self: start; }
+        .bucket-list { grid-template-columns: 1fr; }
+        .split-header, .split-row { grid-template-columns: minmax(0, 1fr) 100px 30px; gap: 5px; }
+        .dialog-inner { padding: 18px; }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand"><span class="brand-mark" aria-hidden="true">RB</span><span>RaptorBudget</span></div>
+      <div class="top-actions">
+        <a class="button" href="/api/export.csv">Export CSV</a>
+        <button class="button" id="sync-button" type="button">Sync</button>
+        <button class="button primary" id="connect-button" type="button">Connect bank</button>
+      </div>
+    </header>
+    <main class="shell">
+      <section class="page-heading" aria-labelledby="page-title">
+        <div><p class="eyebrow">Money review</p><h1 id="page-title">Transactions</h1></div>
+        <p class="as-of" id="period-label">All synced activity</p>
+      </section>
+      <section class="summary" aria-label="Transaction summary">
+        <div class="metric"><span class="metric-label">Transactions</span><span class="metric-value" id="count-total">0</span></div>
+        <div class="metric"><span class="metric-label">Money in</span><span class="metric-value income" id="total-income">$0.00</span></div>
+        <div class="metric"><span class="metric-label">Money out</span><span class="metric-value" id="total-spending">$0.00</span></div>
+      </section>
+      <div class="workspace">
+        <aside class="bucket-panel" aria-labelledby="bucket-title">
+          <div class="bucket-heading"><h2 id="bucket-title">Buckets</h2><button class="button quiet" id="new-bucket-button" type="button">New bucket</button></div>
+          <div class="bucket-list" id="bucket-list"></div>
+          <p class="bucket-note">Balances reflect categorized activity. Incoming money increases a bucket; spending reduces it.</p>
+        </aside>
+        <section class="transaction-panel" aria-labelledby="activity-title">
+          <div class="transactions-head">
+            <div class="filters" role="group" aria-label="Filter transactions">
+              <button class="filter" data-filter="all" aria-pressed="true" type="button">All activity</button>
+              <button class="filter" data-filter="review" aria-pressed="false" type="button">Needs review</button>
+            </div>
+            <input class="search" id="search" type="search" placeholder="Search transactions" aria-label="Search transactions">
+          </div>
+          <h2 id="activity-title" hidden>Transaction activity</h2>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th scope="col">Transaction</th><th scope="col">Amount</th><th scope="col">Bucket allocation</th><th scope="col">Review</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead>
+              <tbody id="transaction-rows"></tbody>
+            </table>
+            <div class="empty" id="empty-state" hidden></div>
+          </div>
+          <p class="notice" id="notice" aria-live="polite"></p>
+        </section>
+      </div>
+    </main>
+
+    <dialog id="allocation-dialog" aria-labelledby="allocation-title">
+      <form class="dialog-inner" id="allocation-form">
+        <div class="dialog-head">
+          <div><p class="eyebrow">Bucket allocation</p><h2 id="allocation-title">Split transaction</h2><p class="dialog-subtitle" id="allocation-description"></p></div>
+          <button class="close-button" type="button" data-close="allocation-dialog" aria-label="Close">×</button>
+        </div>
+        <div class="split-header"><span>Bucket</span><span>Amount</span><span></span></div>
+        <div id="split-rows"></div>
+        <button class="button quiet" id="add-split-button" type="button">Add split</button>
+        <div class="split-footer"><span id="split-total"></span><span class="remaining" id="split-remaining"></span></div>
+        <p class="notice" id="dialog-notice" aria-live="polite"></p>
+        <div class="dialog-actions"><button class="button" type="button" data-close="allocation-dialog">Cancel</button><button class="button primary" id="save-allocation-button" type="submit">Save allocation</button></div>
+      </form>
+    </dialog>
+
+    <dialog id="bucket-dialog" aria-labelledby="bucket-dialog-title">
+      <form class="dialog-inner" id="bucket-form">
+        <div class="dialog-head"><div><p class="eyebrow">Budget setup</p><h2 id="bucket-dialog-title">New bucket</h2></div><button class="close-button" type="button" data-close="bucket-dialog" aria-label="Close">×</button></div>
+        <label for="bucket-name">Bucket name</label>
+        <div class="bucket-form"><input class="bucket-input" id="bucket-name" maxlength="60" required><button class="button primary" type="submit">Add bucket</button></div>
+        <p class="notice" id="bucket-notice" aria-live="polite"></p>
+      </form>
+    </dialog>
+
+    <script>
+      const state = { transactions: [], buckets: [], filter: "all", query: "", connected: false, editing: null };
+      const rowsElement = document.querySelector("#transaction-rows");
+      const notice = document.querySelector("#notice");
+      const allocationDialog = document.querySelector("#allocation-dialog");
+      const splitRows = document.querySelector("#split-rows");
+      const currency = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
+
+      function escapeHtml(value) {
+        return String(value ?? "").replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character]);
+      }
+
+      function money(cents, sign = false) {
+        const value = currency.format(Math.abs(cents) / 100);
+        if (cents < 0) return `-${value}`;
+        return sign && cents > 0 ? `+${value}` : value;
+      }
+
+      async function request(url, options = {}) {
+        const response = await fetch(url, options);
+        const text = await response.text();
+        let body;
+        try { body = text ? JSON.parse(text) : {}; }
+        catch { throw new Error(text || `Request failed (${response.status}).`); }
+        if (!response.ok) throw new Error(body.detail || "Request failed.");
+        return body;
+      }
+
+      async function loadData() {
+        const [status, transactions, buckets] = await Promise.all([
+          request("/api/status"), request("/api/transactions"), request("/api/buckets"),
+        ]);
+        state.connected = status.connected;
+        state.transactions = transactions;
+        state.buckets = buckets;
+        render();
+      }
+
+      function render() {
+        document.querySelector("#connect-button").textContent = state.connected ? "Reconnect bank" : "Connect bank";
+        document.querySelector("#sync-button").disabled = !state.connected;
+        document.querySelector("#count-total").textContent = state.transactions.length;
+        const incoming = state.transactions.filter((transaction) => transaction.amount_cents < 0).reduce((sum, transaction) => sum - transaction.amount_cents, 0);
+        const outgoing = state.transactions.filter((transaction) => transaction.amount_cents > 0).reduce((sum, transaction) => sum + transaction.amount_cents, 0);
+        document.querySelector("#total-income").textContent = currency.format(incoming / 100);
+        document.querySelector("#total-spending").textContent = currency.format(outgoing / 100);
+        document.querySelector("#period-label").textContent = state.transactions.length ? "All synced activity" : "Waiting for account activity";
+        renderBuckets();
+        renderTransactions();
+      }
+
+      function renderBuckets() {
+        const list = document.querySelector("#bucket-list");
+        if (!state.buckets.length) {
+          list.innerHTML = '<div class="empty">No buckets yet.</div>';
+          return;
+        }
+        list.innerHTML = state.buckets.map((bucket) => `<div class="bucket"><span class="bucket-name">${escapeHtml(bucket.name)}</span><span class="bucket-balance ${bucket.balance_cents < 0 ? "negative" : ""}">${money(bucket.balance_cents)}</span></div>`).join("");
+      }
+
+      function renderTransactions() {
+        const query = state.query.trim().toLowerCase();
+        const filtered = state.transactions.filter((transaction) => {
+          const isUnassigned = transaction.unassigned_cents > 0;
+          const matchesFilter = state.filter === "all" || isUnassigned;
+          const matchesQuery = `${transaction.name} ${transaction.merchant_name || ""} ${transaction.category || ""}`.toLowerCase().includes(query);
+          return matchesFilter && matchesQuery;
+        });
+        rowsElement.innerHTML = filtered.map((transaction) => {
+          const income = transaction.amount_cents < 0;
+          const allocations = transaction.allocations.length
+            ? transaction.allocations.map((allocation) => `<span class="allocation-label">${escapeHtml(allocation.bucket_name)} · ${money(allocation.amount_cents)}</span>`).join("")
+            : '<span class="allocation-label">Not allocated</span>';
+          return `<tr>
+            <td><span class="merchant" title="${escapeHtml(transaction.name)}">${escapeHtml(transaction.merchant_name || transaction.name)}</span><span class="transaction-meta">${escapeHtml(transaction.date)}${transaction.pending ? " · Pending" : transaction.category ? ` · ${escapeHtml(transaction.category)}` : ""}</span></td>
+            <td class="amount ${income ? "income" : ""}">${income ? "+" : "−"}${currency.format(Math.abs(transaction.amount_cents) / 100)}</td>
+            <td>${allocations}</td>
+            <td><span class="status ${transaction.unassigned_cents === 0 ? "done" : ""}">${transaction.unassigned_cents === 0 ? "Assigned" : "Needs review"}</span></td>
+            <td><button class="button quiet" type="button" data-edit="${escapeHtml(transaction.transaction_id)}">${transaction.allocations.length ? "Edit split" : "Categorize"}</button></td>
+          </tr>`;
+        }).join("");
+        const empty = document.querySelector("#empty-state");
+        empty.hidden = filtered.length > 0;
+        if (!filtered.length) {
+          empty.textContent = state.transactions.length ? "No transactions match this view." : "No transactions saved yet. Connect your bank, then sync to bring in activity.";
+        }
+      }
+
+      function allocationRow(bucketId = "", amountCents = 0) {
+        const row = document.createElement("div");
+        row.className = "split-row";
+        const options = state.buckets.map((bucket) => `<option value="${bucket.id}" ${String(bucket.id) === String(bucketId) ? "selected" : ""}>${escapeHtml(bucket.name)}</option>`).join("");
+        row.innerHTML = `<select aria-label="Allocation bucket"><option value="">Choose bucket</option>${options}</select><input aria-label="Split amount" type="number" min="0.01" step="0.01" inputmode="decimal" value="${(amountCents / 100).toFixed(2)}"><button class="remove-split" type="button" aria-label="Remove split">×</button>`;
+        row.querySelectorAll("select, input").forEach((element) => element.addEventListener("input", updateSplitTotal));
+        row.querySelector(".remove-split").addEventListener("click", () => { row.remove(); updateSplitTotal(); });
+        splitRows.append(row);
+      }
+
+      function currentSplitCents() {
+        return [...splitRows.querySelectorAll("input")].reduce((sum, input) => sum + Math.round(Number(input.value || 0) * 100), 0);
+      }
+
+      function updateSplitTotal() {
+        const total = Math.abs(state.editing?.amount_cents || 0);
+        const assigned = currentSplitCents();
+        const remaining = total - assigned;
+        document.querySelector("#split-total").textContent = `Transaction total ${currency.format(total / 100)}`;
+        const remainingElement = document.querySelector("#split-remaining");
+        remainingElement.textContent = remaining === 0 ? "Balanced" : `${remaining > 0 ? "Remaining" : "Over by"} ${currency.format(Math.abs(remaining) / 100)}`;
+        remainingElement.classList.toggle("complete", remaining === 0);
+        document.querySelector("#save-allocation-button").disabled = remaining !== 0 || splitRows.children.length === 0 || [...splitRows.querySelectorAll("select")].some((select) => !select.value);
+      }
+
+      function openAllocation(transaction) {
+        state.editing = transaction;
+        document.querySelector("#allocation-title").textContent = transaction.allocations.length ? "Edit split" : "Categorize transaction";
+        document.querySelector("#allocation-description").textContent = `${transaction.merchant_name || transaction.name} · ${money(transaction.amount_cents)}`;
+        document.querySelector("#dialog-notice").textContent = "";
+        splitRows.replaceChildren();
+        if (transaction.allocations.length) {
+          transaction.allocations.forEach((allocation) => allocationRow(allocation.bucket_id, allocation.amount_cents));
+        } else {
+          const fallback = state.buckets.find((bucket) => bucket.name === "Other") || state.buckets[0];
+          allocationRow(fallback?.id || "", Math.abs(transaction.amount_cents));
+        }
+        updateSplitTotal();
+        allocationDialog.showModal();
+      }
+
+      async function connectBank() {
+        const button = document.querySelector("#connect-button");
+        button.disabled = true;
+        notice.textContent = "Opening secure bank connection...";
+        let linkLoadTimer;
+        try {
+          const linkData = await request("/api/link-token", { method: "POST" });
+          const handler = Plaid.create({
+            token: linkData.link_token,
+            onLoad: () => {
+              window.clearTimeout(linkLoadTimer);
+              notice.textContent = "Secure connection is ready. Continue in the Plaid window.";
+            },
+            onSuccess: async (publicToken) => {
+              window.clearTimeout(linkLoadTimer);
+              try {
+                await request("/api/exchange-public-token", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ public_token: publicToken }) });
+                await syncTransactions();
+              } catch (error) { notice.textContent = error.message; }
+              finally { button.disabled = false; }
+            },
+            onExit: (error) => {
+              window.clearTimeout(linkLoadTimer);
+              notice.textContent = error ? (error.display_message || error.error_message || error.error_code) : "Bank connection closed before completion.";
+              button.disabled = false;
+            },
+          });
+          linkLoadTimer = window.setTimeout(() => {
+            button.disabled = false;
+            notice.textContent = "Plaid Link did not finish loading. Check that cdn.plaid.com is reachable and browser privacy or ad-block settings allow it, then retry.";
+          }, 15000);
+          handler.open();
+        } catch (error) {
+          window.clearTimeout(linkLoadTimer);
+          notice.textContent = error.message;
+          button.disabled = false;
+        }
+      }
+
+      async function syncTransactions() {
+        const button = document.querySelector("#sync-button");
+        button.disabled = true;
+        notice.textContent = "Syncing transactions...";
+        try {
+          const counts = await request("/api/transactions/sync", { method: "POST" });
+          await loadData();
+          notice.textContent = `Sync complete · ${counts.added} added · ${counts.modified} updated · ${counts.removed} removed`;
+        } catch (error) { notice.textContent = error.message; }
+        finally { button.disabled = !state.connected; }
+      }
+
+      document.querySelector("#connect-button").addEventListener("click", connectBank);
+      document.querySelector("#sync-button").addEventListener("click", syncTransactions);
+      document.querySelector("#search").addEventListener("input", (event) => { state.query = event.target.value; renderTransactions(); });
+      document.querySelectorAll(".filter").forEach((button) => button.addEventListener("click", () => {
+        state.filter = button.dataset.filter;
+        document.querySelectorAll(".filter").forEach((filter) => filter.setAttribute("aria-pressed", String(filter === button)));
+        renderTransactions();
+      }));
+      rowsElement.addEventListener("click", (event) => {
+        const button = event.target.closest("[data-edit]");
+        if (button) openAllocation(state.transactions.find((transaction) => transaction.transaction_id === button.dataset.edit));
+      });
+      document.querySelector("#add-split-button").addEventListener("click", () => { allocationRow(); updateSplitTotal(); });
+      document.querySelector("#allocation-form").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const allocations = [...splitRows.querySelectorAll(".split-row")].map((row) => ({
+          bucket_id: Number(row.querySelector("select").value),
+          amount_cents: Math.round(Number(row.querySelector("input").value) * 100),
+        }));
+        try {
+          await request(`/api/transactions/${encodeURIComponent(state.editing.transaction_id)}/allocations`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ allocations }) });
+          allocationDialog.close();
+          await loadData();
+          notice.textContent = "Allocation saved.";
+        } catch (error) { document.querySelector("#dialog-notice").textContent = error.message; }
+      });
+      document.querySelector("#new-bucket-button").addEventListener("click", () => {
+        document.querySelector("#bucket-notice").textContent = "";
+        document.querySelector("#bucket-name").value = "";
+        document.querySelector("#bucket-dialog").showModal();
+        document.querySelector("#bucket-name").focus();
+      });
+      document.querySelector("#bucket-form").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        try {
+          await request("/api/buckets", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: document.querySelector("#bucket-name").value }) });
+          document.querySelector("#bucket-dialog").close();
+          await loadData();
+          notice.textContent = "Bucket added.";
+        } catch (error) { document.querySelector("#bucket-notice").textContent = error.message; }
+      });
+      document.querySelectorAll("[data-close]").forEach((button) => button.addEventListener("click", () => document.getElementById(button.dataset.close).close()));
+
+      loadData().catch((error) => { notice.textContent = error.message; });
+    </script>
+  </body>
+</html>
